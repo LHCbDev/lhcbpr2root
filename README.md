@@ -1,6 +1,22 @@
 # CERN ROOT's http server in python
 
 This web server returns objects from **ROOT** files in **json** format
+## Install
+### Prerequisites
+1. PYTHONPATH environment variable should contain path to ROOT lib directory
+2. Python's major version should be the same as used for ROOT compilation
+
+### Virtualenv
+```sh
+$> virtualenv venv
+$> source venv/bin/activate
+$> pip install
+```
+## Run
+From application's folder:
+```sh
+$> python run.py
+```
 
 ## Request example
 
