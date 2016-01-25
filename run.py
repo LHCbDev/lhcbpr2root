@@ -16,6 +16,8 @@ from flask import jsonify
 ROOT_DATA = os.getenv(
     'ROOT_DATA',
     os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data'))
+FLASK_PORT = int(os.getenv('FLASK_PORT', 5000))
+FLASK_HOST = os.getenv('FLASK_HOST', None)
 KEY_FILES = 'files'
 KEY_ITEMS = 'items'
 DELIM = ','
@@ -79,4 +81,4 @@ def service():
 
 if __name__ == '__main__':
 
-    app.run()
+    app.run(host=FLASK_HOST, port=FLASK_PORT)
