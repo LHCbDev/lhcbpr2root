@@ -8,8 +8,9 @@ import json
 # =============================================================================
 import ROOT
 
-from flask import (Flask, request, abort)
-from flask import jsonify
+from flask import (Flask, request, abort, jsonify, current_app)
+from functools import wraps
+
 # =============================================================================
 # Constants:
 # =============================================================================
@@ -29,6 +30,21 @@ app.debug = DEBUG
 # =============================================================================
 # Functions:
 # =============================================================================
+
+
+def jsonp(func):
+    """Wraps JSONified output for JSONP requests."""
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
+        callback = request.args.get('callback', False)
+        if callback:
+            data = str(func(*args, **kwargs).data)
+            content = str(callback) + '(' + data + ')'
+            mimetype = 'application/javascript'
+            return current_app.response_class(content, mimetype=mimetype)
+        else:
+            return func(*args, **kwargs)
+    return decorated_function
 
 
 def process_item(root, item):
@@ -61,6 +77,7 @@ def process_file(filename, items):
 
 
 @app.route('/')
+@jsonp
 def service():
     """ Main service """
     result = []
