@@ -56,7 +56,7 @@
 					graphs.push(JSROOT.JSONR_unref(value));
 				});
 			});
-			console.log(graphs);
+
 			mg = JSROOT.CreateTMultiGraph.apply(this, graphs);
 			JSROOT.draw("gui", mg, "AP");
 

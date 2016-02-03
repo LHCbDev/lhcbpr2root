@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cd docker && docker build -f Dockerfile.release --no-cache -t mazurov/cern-root-server .
+cd docker && docker build -f Dockerfile.release -t mazurov/cern-root-server .
