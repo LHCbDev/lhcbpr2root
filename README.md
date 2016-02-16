@@ -35,9 +35,9 @@ FLASK_HOST=0.0.0.0
 DEBUG=True
 ```
 
-ROOT_DATA --- path to the root directory with ROOT files.
-FLASK_PORT and FLASK_HOST --- port and host for the web server
-DEBUG --- on/off debug mode
+* ROOT_DATA --- path to the root directory with ROOT files.
+* FLASK_PORT and FLASK_HOST --- port and host for the web server
+* DEBUG --- on/off debug mode
 
 
 ## Request example
