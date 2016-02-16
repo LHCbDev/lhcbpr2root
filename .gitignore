@@ -1,2 +1,4 @@
 venv
+envs/*
+!envs/default.env
 *.tar.gz

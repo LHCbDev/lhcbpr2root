@@ -3,20 +3,30 @@
 # =============================================================================
 import os
 import json
-# =============================================================================
+from dotenv import load_dotenv
 # OTHER:
 # =============================================================================
 import ROOT
-
 from flask import (Flask, request, abort, jsonify, current_app)
 from functools import wraps
+
+
+# =============================================================================
+os.environ.setdefault('ENV', 'default')
+env_file = os.path.abspath(os.path.join('envs', "%s.env" % os.getenv('ENV')))
+print('*' * 80)
+print("Read environment from '{}'".format(env_file))
+load_dotenv(env_file)
+
 
 # =============================================================================
 # Constants:
 # =============================================================================
-ROOT_DATA = os.getenv(
+ROOT_DATA = os.path.abspath(os.getenv(
     'ROOT_DATA',
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data'))
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+))
+print("Path to ROOT directory '{}'".format(ROOT_DATA))
 FLASK_PORT = int(os.getenv('FLASK_PORT', 5000))
 FLASK_HOST = os.getenv('FLASK_HOST', None)
 KEY_FILES = 'files'
@@ -26,6 +36,7 @@ DEBUG = True
 # =============================================================================
 app = Flask("ROOT service")
 app.debug = DEBUG
+print('*' * 80)
 
 # =============================================================================
 # Functions:
@@ -68,6 +79,8 @@ def process_file(filename, items):
             if json_item:
                 json_items[item] = json_item
         return {"root": filename, "items": json_items}
+    else:
+        print("File '%s' does not exists" % filename_abs)
     return None
 
 
