@@ -42,18 +42,17 @@ DEBUG=True
 ## Usage
 
 ### Args: 
-* **files**: [REQUIRED] list of root files to be processed
-* **items**: list of objects that need to be retrieved; first uses the Get function
-             to retrieve it, if fails uses FindObjectAny, if fails again returns None
+* **files**: [REQUIRED] list of root files to be processed.
+* **items**: list of objects that need to be retrieved; first uses the *Get* function
+             to retrieve it, if fails uses *FindObjectAny*, if fails again returns *None*.
 * **folders**: list of directories to be parsed (NB It is not recursive). 
 
 ### Returns "result", a list of dictionaries (one per file) with:
 * **root**: the filename processed
 * **items**: a dictionary with all the processed items.
-* **trees**: a dictionary with all the processed paths; for each path there are two lists: 
-              "folders": sorted list of sub-directories Titles
-              "objects": sorted list of objects Names
-
+* **trees**: a dictionary with all the processed paths. For each path there are two lists: 
+    * **folders**: sorted list of sub-directories Titles
+    * **objects**: sorted list of objects Names
 
 
 ## Request example
