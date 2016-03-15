@@ -31,6 +31,7 @@ FLASK_PORT = int(os.getenv('FLASK_PORT', 5000))
 FLASK_HOST = os.getenv('FLASK_HOST', None)
 KEY_FILES = 'files'
 KEY_ITEMS = 'items'
+KEY_FOLDERS = 'folders'
 DELIM = ','
 DEBUG = False
 # =============================================================================
@@ -56,45 +57,53 @@ def jsonp(func):
             return func(*args, **kwargs)
     return decorated_function
 
-# Try to Get the object if fully qualified (i.e. complete path given)
-# il fails try a FindObjectAny which find object by name in the 
-# list of memory objects of the current directory or its sub-directories. 
-# returns the JSON version of the object or None
+
 def process_item(root, item):
+    """
+    Try to Get the object if fully qualified (i.e. complete path given)
+    il fails try a FindObjectAny which find object by name in the
+    list of memory objects of the current directory or its sub-directories.
+    returns the JSON version of the object or None
+    """
     obj = root.Get(item)
     if not obj:
-      obj = root.FindObjectAny(item)
+        obj = root.FindObjectAny(item)
     if obj:
         obj_json = json.loads(str(ROOT.TBufferJSON.ConvertToJSON(obj)))
         return obj_json
     return None
 
-# Parse the given directory: "folder" 
-# returns a dictionary with:
-#   "folders": sorted list of sub-directories Titles
-#   "objects": sorted list of objects Names
+
+
 def process_folder(root, folder):
-  if not folder:
-    return None
-  listd = []
-  listl = []
-  if root.cd(folder):
-    for kname in ROOT.gDirectory.GetListOfKeys():
-      if kname.IsFolder():
-        listd.append(kname.GetTitle())
-      else:
-        listl.append(kname.GetName())
-  else:
-    return None      
-  return {"folders": sorted(listd), "objects": sorted(listl)}     
+    """
+    Parse the given directory: "folder"
+    returns a dictionary with:
+      "folders": sorted list of sub-directories Titles
+      "objects": sorted list of objects Names
+    """
+    if not folder:
+        return None
+    listd = []
+    listl = []
+    if root.cd(folder):
+        for kname in ROOT.gDirectory.GetListOfKeys():
+            if kname.IsFolder():
+                listd.append(kname.GetTitle())
+            else:
+                listl.append(kname.GetName())
+    else:
+        return None
+    return {"folders": sorted(listd), "objects": sorted(listl)}
 
-
-# Process the list of items AND the list of folders for the given filename
-# returns a dictionary:
-#   "root": the filename processed
-#   "items": a dictionary with all the processed items
-#   "trees": a dictionary with all the processed folders
 def process_file(filename, items, folders):
+    """
+    Process the list of items AND the list of folders for the given filename
+    returns a dictionary:
+      "root": the filename processed
+      "items": a dictionary with all the processed items
+      "trees": a dictionary with all the processed folders
+    """
     filename_abs = os.path.join(ROOT_DATA, filename)
     if os.path.isfile(filename_abs):
         root = ROOT.TFile.Open(filename_abs, "READ")
@@ -104,12 +113,12 @@ def process_file(filename, items, folders):
         for item in items:
             json_item = process_item(root, item)
             if json_item:
-                json_items[item] = json_item        
+                json_items[item] = json_item
         json_folders = {}
         for folder in folders:
             json_folder = process_folder(root, folder)
             if json_folder:
-                json_folders[folder] = json_folder                  
+                json_folders[folder] = json_folder
         return {"root": filename, "items": json_items, "trees": json_folders}
     else:
         print("File '%s' does not exists" % filename_abs)
@@ -123,19 +132,20 @@ def process_file(filename, items, folders):
 
 @app.route('/')
 @jsonp
-# args: 
-#   files: [REQUIRED] list of root files to be processed
-#   items: list of objects that need to be retrieved; first uses the Get function
-#          to retrieve it, if fails uses FindObjectAny, if fails again returns None
-#   folders: list of directories to be parsed; for each folder returns two lists: 
-#           "folders" with the list of the Titles of the sub-directories and 
-#           "objects" with the list of the Names of the objects inside the folder. 
-# returns "result", a list of dictionaries (one per file) with:
-#   "root": the filename processed
-#   "items": a dictionary with all the processed items
-#   "trees": a dictionary with all the processed folders
 def service():
-    """ Main service """
+    """
+    args:
+      files: [REQUIRED] list of root files to be processed
+      items: list of objects that need to be retrieved; first uses the Get function
+             to retrieve it, if fails uses FindObjectAny, if fails again returns None
+      folders: list of directories to be parsed; for each folder returns two lists:
+              "folders" with the list of the Titles of the sub-directories and
+              "objects" with the list of the Names of the objects inside the folder.
+    returns "result", a list of dictionaries (one per file) with:
+      "root": the filename processed
+      "items": a dictionary with all the processed items
+      "trees": a dictionary with all the processed folders
+    """
     result = []
     # -------------------------------------------------------------------------
     files = request.args.get(KEY_FILES, None)
