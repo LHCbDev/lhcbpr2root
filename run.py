@@ -11,33 +11,38 @@ import ROOT
 
 from flask import (Flask, request, abort, jsonify, current_app)
 from functools import wraps
-
+# =============================================================================
+def env_var(key, default=None):
+    """Retrieves env vars and makes Python boolean replacements"""
+    val = os.environ.get(key, default)
+    if val == 'True':
+        val = True
+    elif val == 'False':
+        val = False
+    return val
 # =============================================================================
 os.environ.setdefault('ENV', 'default')
-env_file = os.path.abspath(os.path.join('envs', "%s.env" % os.getenv('ENV')))
+env_file = os.path.abspath(os.path.join('envs', "%s.env" % env_var('ENV')))
 print('*' * 80)
 print("Read environment from '{}'".format(env_file))
 load_dotenv(env_file)
 
+
 # =============================================================================
 # Constants:
 # =============================================================================
-ROOT_DATA = os.path.abspath(os.getenv(
+ROOT_DATA = os.path.abspath(env_var(
     'ROOT_DATA',
     os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 ))
 print("Path to ROOT directory '{}'".format(ROOT_DATA))
-FLASK_PORT = int(os.getenv('FLASK_PORT', 5000))
-FLASK_HOST = os.getenv('FLASK_HOST', None)
+FLASK_PORT = int(env_var('FLASK_PORT', 5000))
+FLASK_HOST = env_var('FLASK_HOST', None)
 KEY_FILES = 'files'
 KEY_ITEMS = 'items'
 KEY_FOLDERS = 'folders'
 DELIM = ','
-DEBUG = False
-# =============================================================================
-app = Flask("ROOT service")
-app.debug = DEBUG
-
+DEBUG = env_var('DEBUG', False)
 # =============================================================================
 # Functions:
 # =============================================================================
@@ -128,8 +133,7 @@ def process_file(filename, items, folders):
 # =============================================================================
 # Routes:
 # =============================================================================
-
-
+app = Flask("ROOT service")
 @app.route('/')
 @jsonp
 def service():
@@ -164,5 +168,4 @@ def service():
     return jsonify(result=result)
 
 if __name__ == '__main__':
-
-    app.run(host=FLASK_HOST, port=FLASK_PORT)
+    app.run(host=FLASK_HOST, port=FLASK_PORT, debug=DEBUG)
