@@ -44,7 +44,8 @@ FLASK_HOST = env_var('FLASK_HOST', None)
 KEY_FILES = 'files'
 KEY_ITEMS = 'items'
 KEY_FOLDERS = 'folders'
-DELIM = ','
+#DELIM = ','
+DELIM = '__'
 DEBUG = env_var('DEBUG', False)
 # =============================================================================
 # Functions:
@@ -68,10 +69,10 @@ def jsonp(func):
 
 def process_item(root, item):
     """
-    Try to Get the object if fully qualified (i.e. complete path given)
-    il fails try a FindObjectAny which find object by name in the
+    Tries to Get the object if fully qualified (i.e. complete path given)
+    il fails tries a FindObjectAny which find object by name in the
     list of memory objects of the current directory or its sub-directories.
-    returns the JSON version of the object or None
+    Returns the JSON version of the object or None
     """
     obj = root.Get(item)
     if not obj:
@@ -82,27 +83,71 @@ def process_item(root, item):
     return None
 
 
-
-def process_folder(root, folder):
+def process_folder(root, path = ""):
     """
-    Parse the given directory: "folder"
-    returns a dictionary with:
-      "folders": sorted list of sub-directories Titles
-      "objects": sorted list of objects Names
+    Reads recursively the directory trees inside the root file
+    If path is defined returns the subtree of the given directory 
+    Returns a dictionary (in "pathdir" / is substitutes with __):
+    {
+      "List__pathdir1": {
+        "plotpath1.1" : "plottitle1.1".
+        "plotpath1.2" : "plottitle1.2",
+        ...
+      },
+      ...
+      "List" : {
+        "plotpath0.1" : "plottitle0.1",
+        "plotpath0.2" : "plottitle0.2",
+        ...
+      }
+    }
+    Examples:  
+    {
+      "List__EcalMonitor": {
+        "/EcalMonitor/143": "Number of Subhits in the ECAL ( BC = 2  )", 
+        "/EcalMonitor/144": "Number of Subhits in the ECAL ( BC = 3  )", 
+        "/EcalMonitor/145": "Number of Subhits in the ECAL ( BC = 4  )"
+      }, 
+      "List__Velo__VeloGaussMoni": {
+        "/Velo/VeloGaussMoni/TOF": "Time Of Flight [ns]", 
+        "/Velo/VeloGaussMoni/TOFPU": "PileUp: Time Of Flight [ns]"
+      },
+      "List": {
+        "/ecalem": "E Ecal", 
+        "/eop": "E/p" 
+      }  
+    } 
     """
-    if not folder:
-        return None
-    listd = []
-    listl = []
-    if root.cd(folder):
-        for kname in ROOT.gDirectory.GetListOfKeys():
-            if kname.IsFolder():
-                listd.append(kname.GetTitle())
-            else:
-                listl.append(kname.GetName())
+    myDict = {}
+    if path:
+        if root.cd(path):
+          for key in ROOT.gDirectory.GetListOfKeys():
+              filterKey(root, key, path, myDict, "__List")
     else:
-        return None
-    return {"folders": sorted(listd), "objects": sorted(listl)}
+        for key in ROOT.gDirectory.GetListOfKeys():
+            mypath = ROOT.gDirectory.GetPathStatic()
+            filterKey(root, key, mypath, myDict, "")
+            ROOT.gDirectory.cd(mypath)
+    return myDict
+
+def filterKey(root, mykey, currentpath, toDict, gName):
+     if mykey.IsFolder():
+        topath =  os.path.join(currentpath, mykey.GetName())
+        gName = gName + "__" + mykey.GetName()
+        if root.cd(topath):
+          for key in ROOT.gDirectory.GetListOfKeys():
+            filterKey(root, key, topath, toDict, gName)
+     else:
+        object_title = mykey.GetTitle()
+        category = gName[2:] # remove the first __
+        if ( not category in toDict.keys() ):
+          toDict[category] = {}
+        if ":" in currentpath:
+          toDict[category][os.path.join(currentpath.split(':')[1][1:].strip(), mykey.GetName())] = object_title
+        else:
+          toDict[category][os.path.join(currentpath, mykey.GetName())] = object_title
+     return
+
 
 def process_file(filename, items, folders):
     """
@@ -116,6 +161,7 @@ def process_file(filename, items, folders):
     if os.path.isfile(filename_abs):
         root = ROOT.TFile.Open(filename_abs, "READ")
         if not root:
+            print("File '%s' is not a root file" % filename_abs)
             return None
         json_items = {}
         for item in items:
@@ -124,6 +170,7 @@ def process_file(filename, items, folders):
                 json_items[item] = json_item
         json_folders = {}
         for folder in folders:
+          if folder != "":
             json_folder = process_folder(root, folder)
             if json_folder:
                 json_folders[folder] = json_folder
