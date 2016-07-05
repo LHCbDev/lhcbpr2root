@@ -192,9 +192,7 @@ def service():
       files: [REQUIRED] list of root files to be processed
       items: list of objects that need to be retrieved; first uses the Get function
              to retrieve it, if fails uses FindObjectAny, if fails again returns None
-      folders: list of directories to be parsed; for each folder returns two lists:
-              "folders" with the list of the Titles of the sub-directories and
-              "objects" with the list of the Names of the objects inside the folder.
+      folders: list of directories to be parsed; for each folder returns two lists
     returns "result", a list of dictionaries (one per file) with:
       "root": the filename processed
       "items": a dictionary with all the processed items
