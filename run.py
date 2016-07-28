@@ -74,9 +74,10 @@ def process_item(root, item):
     list of memory objects of the current directory or its sub-directories.
     Returns the JSON version of the object or None
     """
-    obj = root.Get(item)
+    obj = root.Get(str(item))
+
     if not obj:
-        obj = root.FindObjectAny(item)
+        obj = root.FindObjectAny(str(item))
     if obj:
         obj_json = json.loads(str(ROOT.TBufferJSON.ConvertToJSON(obj)))
         return obj_json
