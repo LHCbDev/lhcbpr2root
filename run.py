@@ -44,6 +44,7 @@ FLASK_HOST = env_var('FLASK_HOST', None)
 KEY_FILES = 'files'
 KEY_ITEMS = 'items'
 KEY_FOLDERS = 'folders'
+KEY_COMPUTE = 'compute'
 #DELIM = ','
 DELIM = '__'
 DEBUG = env_var('DEBUG', False)
@@ -149,6 +150,63 @@ def filterKey(root, mykey, currentpath, toDict, gName):
           toDict[category][os.path.join(currentpath, mykey.GetName())] = object_title
      return
 
+def compute_opt(filenames, item, option):
+  """
+    Compute operation "option" on the item of the two files
+    Implementing operations:
+      Kolmogorov: calculate the kolmogorov test (returns its value with variable: "KSTest")
+      Difference: calculate item1 - item2
+      Ratio:      calculate item1 / item2
+    Returns: { { "root": the first file name, "items": { "itemname": the first plots }},
+               { "root": the second file name, "items": { "itemname": the second plots }},   
+             "computed_result" or "KSTest": the computed plot/value } 
+  """  
+  if len(filenames) == 2:
+    file1 = os.path.join(ROOT_DATA, filenames[0])
+    file2 = os.path.join(ROOT_DATA, filenames[1])
+    if not os.path.isfile(file1) or not os.path.isfile(file2):
+      print("One of the given files '%s' or '%s' does not exists" % (file1, file2))
+      return None
+    root1 = ROOT.TFile.Open(file1, "READ")
+    root2 = ROOT.TFile.Open(file2, "READ")
+    if not root1 or not root2:
+      print("one of the fiven files '%s' or '%s' is not a root file" % (file1, file2))
+      return None
+    
+    result = []
+    # first add the two histograms
+    h1 = root1.Get(str(item));
+    if h1:
+      result.append({"root": filenames[0], "items": {item: json.loads(str(ROOT.TBufferJSON.ConvertToJSON(h1))) }})
+    else:
+      print("ERROR item %s not found in file %s"%(item, file1))
+      return None
+    h2 = root2.Get(str(item));
+    if h2:
+      result.append({"root": filenames[1], "items": {item: json.loads(str(ROOT.TBufferJSON.ConvertToJSON(h2))) }})
+    else:
+      print("ERROR item %s not found in file %s"%(item, file2))
+      return None
+    # compute what required
+    if option == "Kolmogorov":
+      result.append({"KSTest": h2.KolmogorovTest(h1)})
+    if option == "Difference":
+      h1.Add(h2, -1);
+      h1.SetName("Difference");
+      h1.SetOption("HIST");
+      h1.SetMinimum(-100);
+    elif option == "Ratio":
+      h1.Divide(h2);
+      h1.SetName("Ratio");
+      h1.SetOption("HIST");
+    if h1:
+      result.append( {"computed_result": json.loads( str( ROOT.TBufferJSON.ConvertToJSON(h1) ) ) } )
+    return result;
+
+  else:
+    print("ERROR. We can compute the %s only beetween two files (given %s)" % (option, filenames))
+  return None
+
 
 def process_file(filename, items, folders):
     """
@@ -194,6 +252,8 @@ def service():
       items: list of objects that need to be retrieved; first uses the Get function
              to retrieve it, if fails uses FindObjectAny, if fails again returns None
       folders: list of directories to be parsed; for each folder returns two lists
+      compute: computation to add to the result, possible labels are:
+               "Kolmogorov", "Difference" and "Ratio" 
     returns "result", a list of dictionaries (one per file) with:
       "root": the filename processed
       "items": a dictionary with all the processed items
@@ -204,14 +264,21 @@ def service():
     files = request.args.get(KEY_FILES, None)
     items = request.args.get(KEY_ITEMS, '')
     folders = request.args.get(KEY_FOLDERS, '')
+    compute = request.args.get(KEY_COMPUTE, None)
     if not files:
         abort(404)
 
     # -------------------------------------------------------------------------
-    for f in files.split(DELIM):
-        json_file = process_file(f, items.split(DELIM), folders.split(DELIM))
+    if compute:
+      for item in items.split(DELIM):
+        json_file = compute_opt(files.split(DELIM), item, compute)
         if json_file:
-            result.append(json_file)
+          result += json_file
+    else:
+      for f in files.split(DELIM):
+          json_file = process_file(f, items.split(DELIM), folders.split(DELIM))
+          if json_file:
+              result.append(json_file)
 
     # -------------------------------------------------------------------------
     return jsonify(result=result)
@@ -221,7 +288,7 @@ def run_gunicorn_server(app):
     """
 
     from gunicorn.app.base import Application
-
+  
     class FlaskApplication(Application):
         def init(self, parser, opts, args):
             return {
