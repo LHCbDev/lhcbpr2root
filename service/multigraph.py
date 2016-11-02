@@ -4,7 +4,6 @@ from flask import (request, jsonify)
 from array import array
 from fractions import Fraction
 import json
-import q
 
 
 @app.route('/root/multigraph/')
@@ -39,7 +38,7 @@ def multigraph():
         exs = []
         eys = []
         color = colors[i % len(colors)]
-        q(color)
+
         for x, y, e in ps:
             xs.append(x)
             ys.append(y)
