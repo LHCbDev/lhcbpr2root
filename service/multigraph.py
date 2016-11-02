@@ -83,7 +83,6 @@ def multigraph():
 
             g = ROOT.TGraph(len(xs), array('f', xs), array('f', ys))
             g.SetTitle("Ratio %s / %s" % (titles[i], titles[0]))
-            g.SetTitleSize(0.3)
             g.Draw()
             g.GetXaxis().SetTitle(xaxis_title)
             g.GetYaxis().SetTitle("Ratio")
