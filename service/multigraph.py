@@ -23,7 +23,7 @@ def multigraph():
     titles = titles.split(";") if titles else [""] * len(points)
 
     colors = request.args.get("colors", None)
-    colors = titles.split(";") if colors else utils.colors
+    colors = map(lambda c: int(c), colors.split(";")) if colors else utils.colors
 
     xaxis_title = request.args.get("xaxis", "")
     yaxis_title = request.args.get("yaxis", "")
@@ -57,7 +57,7 @@ def multigraph():
         # q(titles[i])
         mg.Add(g)
 
-    mg.Draw("APC")
+    mg.Draw("AP")
     leg = canvas.BuildLegend(0.5, 0.65,0.88, 0.85);
     mg.GetXaxis().SetTitle(xaxis_title)
     mg.GetYaxis().SetTitle(yaxis_title)

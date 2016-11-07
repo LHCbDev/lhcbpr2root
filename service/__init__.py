@@ -20,3 +20,4 @@ def jsonp(func):
 
 import service.views
 import service.multigraph
+import service.profile
