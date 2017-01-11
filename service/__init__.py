@@ -21,3 +21,5 @@ def jsonp(func):
 import service.views
 import service.multigraph
 import service.profile
+import service.hrtplot
+import service.text2dhist
